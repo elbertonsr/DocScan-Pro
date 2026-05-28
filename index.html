@@ -76,7 +76,7 @@
             justify-content: center;
             background: #000;
             overflow: hidden;
-            min-height: 0; /* Garante estabilidade do flexbox */
+            min-height: 0;
         }
 
         video, canvas, .preview-image {
@@ -174,7 +174,6 @@
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
-        /* Painel de Escala Original */
         .scale-control-panel {
             background: #11131e;
             padding: 12px 20px;
@@ -307,7 +306,6 @@
 
         .hide { display: none !important; }
         
-        /* Ajuste do container para evitar rolagem externa da tela */
         .view-container { 
             display: flex; 
             flex-direction: column; 
@@ -525,8 +523,8 @@
     <script>
         // --- ESTADO DA APLICAÇÃO ---
         let stream = null;
-        let currentPages = []; // Armazena objetos { dataUrl: string, scale: number }
-        let activePageIndex = -1; // -1 = Câmera ativa
+        let currentPages = []; 
+        let activePageIndex = -1; 
         let savedDocuments = []; 
         let editingDocId = null; 
 
@@ -553,7 +551,6 @@
             
             if (docToEdit) {
                 editingDocId = docToEdit.id;
-                // Mapeia garantindo a integridade da propriedade de escala
                 currentPages = docToEdit.pages.map(p => typeof p === 'string' ? { dataUrl: p, scale: 100 } : { ...p });
                 updateThumbnails();
                 if (currentPages.length > 0) {
@@ -584,8 +581,6 @@
             scalePanel.classList.add('hide');
             video.classList.remove('hide');
             scannerOverlay.classList.remove('hide');
-            
-            // Reexibe o botão redondo de captura (Aprimoramento 1)
             btnCapture.classList.remove('hide');
 
             updateThumbnailsUIActiveState();
@@ -611,14 +606,19 @@
             startCamera();
         }
 
-        // --- CAPTURA ---
+        // --- CAPTURA COM EFEITO DE SCANNER REALISTA ---
         function capturePage() {
             if (activePageIndex !== -1) return;
 
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
             const ctx = canvas.getContext('2d');
+            
+            // Filtro inteligente de Scanner: Realça o fundo branco e acentua o texto preto removendo sombras estáticas
+            ctx.filter = 'brightness(1.15) contrast(1.65) grayscale(0.1)';
+            
             ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            ctx.filter = 'none'; // Reseta o filtro do contexto do canvas
             
             const imgData = canvas.toDataURL('image/jpeg', 0.85);
             currentPages.push({ dataUrl: imgData, scale: 100 });
@@ -627,15 +627,13 @@
             viewPage(currentPages.length - 1);
         }
 
-        // --- EDIÇÃO & VISUALIZAÇÃO (Aprimoramento 1 & 4) ---
+        // --- EDIÇÃO & VISUALIZAÇÃO ---
         function viewPage(index) {
             stopCamera();
             activePageIndex = index;
             
             video.classList.add('hide');
             scannerOverlay.classList.add('hide');
-            
-            // Oculta o botão redondo de captura enquanto visualiza a miniatura (Aprimoramento 1)
             btnCapture.classList.add('hide');
 
             const page = currentPages[index];
@@ -643,10 +641,8 @@
             previewImage.style.transform = `scale(${page.scale / 100})`;
             previewImage.classList.remove('hide');
             
-            // Apresenta painéis de edição adicionais
             pageEditControls.classList.remove('hide');
             
-            // Configura o controle de escala reativado (Aprimoramento 4)
             scaleSlider.value = page.scale || 100;
             scaleValue.innerText = (page.scale || 100) + '%';
             scalePanel.classList.remove('hide');
@@ -654,21 +650,17 @@
             updateThumbnailsUIActiveState();
         }
 
-        // Funcionalidade de Ajuste de Dimensionamento (Aprimoramento 4)
         function adjustPageScale(value) {
             if (activePageIndex === -1) return;
             currentPages[activePageIndex].scale = parseInt(value);
             scaleValue.innerText = value + '%';
             
-            // Atualiza o preview visual em tempo real
             previewImage.style.transform = `scale(${value / 100})`;
             
-            // Sincroniza o texto interno da miniatura correspondente
             const activeBadge = thumbnailsTray.querySelector('.active-thumb .thumb-scale-badge');
             if (activeBadge) activeBadge.innerText = value + '%';
         }
 
-        // Rotação 90°
         function rotateCurrentPage() {
             if (activePageIndex === -1) return;
             
@@ -691,7 +683,6 @@
             img.src = pageData;
         }
 
-        // Remoção Individual
         function deleteCurrentPage() {
             if (activePageIndex === -1) return;
             
@@ -768,9 +759,8 @@
             closeScanner();
         }
 
-        // Modificação de Título Individual na Galeria (Aprimoramento 3)
         function renameDocument(id, event) {
-            event.stopPropagation(); // Evita interrupção no fluxo dos cards
+            event.stopPropagation(); 
             const doc = savedDocuments.find(d => d.id === id);
             if (!doc) return;
             
@@ -781,7 +771,6 @@
             }
         }
 
-        // Renderização Dinâmica respeitando a trava de scroll externo (Aprimoramento 2)
         function renderHomeDocs() {
             docsListEl.innerHTML = '';
             
@@ -817,9 +806,7 @@
             if (doc) openScanner(doc);
         }
 
-        // Download com Ajuste Proporcional de Dimensão (Aprimoramento 4)
         async function downloadPDF(docId) {
-            const doc = savedDocuments.find(d => d.id === id => id === docId);
             const targetDoc = savedDocuments.find(d => d.id === docId);
             if (!targetDoc || targetDoc.pages.length === 0) return;
 
@@ -838,7 +825,6 @@
                     img.onload = () => {
                         const ratio = Math.min(pdfWidth / img.width, pdfHeight / img.height);
                         
-                        // Fator baseado na escala individual definida pelo usuário (Aprimoramento 4)
                         const scaleMultiplier = (page.scale || 100) / 100;
                         const finalWidth = img.width * ratio * scaleMultiplier;
                         const finalHeight = img.height * ratio * scaleMultiplier;
@@ -855,6 +841,18 @@
 
             pdf.save(`${targetDoc.title}.pdf`);
         }
+
+        // --- EXPOSIÇÃO GLOBAL PARA BOTÕES DO DOM ---
+        window.openScanner = openScanner;
+        window.closeScanner = closeScanner;
+        window.backToCamera = backToCamera;
+        window.capturePage = capturePage;
+        window.adjustPageScale = adjustPageScale;
+        window.rotateCurrentPage = rotateCurrentPage;
+        window.deleteCurrentPage = deleteCurrentPage;
+        window.renameDocument = renameDocument;
+        window.editDocument = editDocument;
+        window.downloadPDF = downloadPDF;
 
         // Execução inicializada
         renderHomeDocs();
