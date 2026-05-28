@@ -28,13 +28,12 @@
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
             background-color: var(--bg-main);
             color: var(--text-primary);
-            min-height: 100vh;
+            height: 100vh;
             display: flex;
             flex-direction: column;
             overflow: hidden;
         }
 
-        /* ----- ESTILOS ORIGINAIS MANTIDOS ----- */
         header {
             padding: 20px;
             display: flex;
@@ -77,17 +76,23 @@
             justify-content: center;
             background: #000;
             overflow: hidden;
+            min-height: 0; /* Garante estabilidade do flexbox */
         }
 
         video, canvas, .preview-image {
             width: 100%;
             height: 100%;
-            object-fit: contain; /* Ajustado para não cortar a imagem capturada */
+            object-fit: contain;
             position: absolute;
         }
         
         video {
-            object-fit: cover; /* Câmera continua cobrindo a tela */
+            object-fit: cover;
+        }
+
+        .preview-image {
+            transition: transform 0.2s ease;
+            transform-origin: center;
         }
 
         .scanner-overlay {
@@ -169,6 +174,24 @@
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
+        /* Painel de Escala Original */
+        .scale-control-panel {
+            background: #11131e;
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            font-size: 0.85rem;
+            z-index: 10;
+        }
+
+        .scale-control-panel input[type="range"] {
+            flex: 1;
+            accent-color: var(--accent);
+            cursor: pointer;
+        }
+
         .thumbnails-tray {
             height: 95px;
             background: #0d0f17;
@@ -216,7 +239,7 @@
 
         .control-panel {
             background: var(--surface);
-            padding: 20px 30px 30px 30px;
+            padding: 15px 30px 25px 30px;
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -276,19 +299,28 @@
             transition: opacity 0.2s;
         }
 
-        /* CONTINUAÇÃO DO CÓDIGO CORTADO NO FINAL E NOVOS ESTILOS */
         .btn-save-pdf:disabled, .btn-secondary:disabled {
             opacity: 0.5;
             cursor: not-allowed;
             pointer-events: none;
         }
 
-        /* ----- NOVOS ESTILOS: ESTRUTURA E FUNCIONALIDADES ADICIONAIS ----- */
         .hide { display: none !important; }
-        .view-container { display: flex; flex-direction: column; height: 100vh; width: 100vw; }
+        
+        /* Ajuste do container para evitar rolagem externa da tela */
+        .view-container { 
+            display: flex; 
+            flex-direction: column; 
+            height: 100vh; 
+            width: 100vw; 
+            overflow: hidden; 
+        }
 
-        /* Estilos da Tela Inicial */
-        .home-content { padding: 20px; overflow-y: auto; flex: 1; }
+        .home-content { 
+            padding: 20px; 
+            overflow-y: auto; 
+            flex: 1; 
+        }
         
         .btn-scan-main {
             background: var(--accent-gradient);
@@ -304,7 +336,7 @@
             align-items: center;
             gap: 10px;
             cursor: pointer;
-            margin-bottom: 30px;
+            margin-bottom: 25px;
             box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
         }
 
@@ -312,6 +344,7 @@
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
             gap: 15px;
+            padding-bottom: 20px;
         }
 
         .doc-card {
@@ -332,7 +365,35 @@
             object-fit: cover;
         }
 
-        .doc-title { font-size: 0.9rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .doc-title-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 4px;
+        }
+
+        .doc-title { 
+            font-size: 0.9rem; 
+            font-weight: 600; 
+            white-space: nowrap; 
+            overflow: hidden; 
+            text-overflow: ellipsis;
+            flex: 1;
+        }
+
+        .btn-rename {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 0.85rem;
+            padding: 2px;
+        }
+
+        .btn-rename:hover {
+            color: var(--accent);
+        }
+
         .doc-date { font-size: 0.75rem; color: var(--text-secondary); }
         
         .doc-actions { display: flex; gap: 8px; margin-top: auto; }
@@ -348,7 +409,6 @@
         .btn-edit { background: rgba(255,255,255,0.1); color: white; }
         .btn-download { background: rgba(59, 130, 246, 0.2); color: var(--accent); }
 
-        /* Botões de Edição (Girar e Deletar) sobre a imagem escaneada */
         .page-edit-controls {
             position: absolute;
             top: 20px;
@@ -375,7 +435,6 @@
         
         .btn-action-circle.danger { color: #ef4444; border-color: rgba(239, 68, 68, 0.3); }
 
-        /* Botão para voltar à câmera quando vendo imagem */
         .add-more-card {
             min-width: 55px; height: 75px; border-radius: 6px;
             background: rgba(255,255,255,0.1); border: 2px dashed rgba(255,255,255,0.3);
@@ -415,9 +474,7 @@
 
         <div class="viewport-container">
             <video id="camera-feed" autoplay playsinline></video>
-            
             <canvas id="capture-canvas" class="hide"></canvas>
-            
             <img id="preview-image" class="preview-image hide" />
 
             <div id="scanner-overlay" class="scanner-overlay">
@@ -439,6 +496,12 @@
             </div>
         </div>
 
+        <div id="scale-panel" class="scale-control-panel hide">
+            <span>Ajuste de Dimensão:</span>
+            <input type="range" id="scale-slider" min="40" max="100" value="100" oninput="adjustPageScale(this.value)">
+            <span id="scale-value">100%</span>
+        </div>
+
         <div class="thumbnails-tray" id="thumbnails-tray">
             </div>
 
@@ -447,8 +510,10 @@
                 <i class="fa-solid fa-camera"></i>
             </button>
             
-            <div class="btn-trigger-outer" id="btn-capture" onclick="capturePage()">
-                <div class="btn-trigger-inner"></div>
+            <div style="width: 72px; height: 72px; display: flex; align-items: center; justify-content: center;">
+                <div class="btn-trigger-outer" id="btn-capture" onclick="capturePage()">
+                    <div class="btn-trigger-inner"></div>
+                </div>
             </div>
             
             <button class="btn-save-pdf" id="btn-save" onclick="saveDocument()" disabled>
@@ -460,43 +525,44 @@
     <script>
         // --- ESTADO DA APLICAÇÃO ---
         let stream = null;
-        let currentPages = []; // Array de Base64 das imagens da sessão atual
-        let activePageIndex = -1; // -1 significa que a câmera está ativa
-        let savedDocuments = []; // Array de documentos finalizados
-        let editingDocId = null; // ID do documento caso esteja editando um existente
+        let currentPages = []; // Armazena objetos { dataUrl: string, scale: number }
+        let activePageIndex = -1; // -1 = Câmera ativa
+        let savedDocuments = []; 
+        let editingDocId = null; 
 
         // --- ELEMENTOS DO DOM ---
-        const views = {
-            home: document.getElementById('home-view'),
-            scanner: document.getElementById('scanner-view')
-        };
+        const views = { home: document.getElementById('home-view'), scanner: document.getElementById('scanner-view') };
         const video = document.getElementById('camera-feed');
         const canvas = document.getElementById('capture-canvas');
         const previewImage = document.getElementById('preview-image');
         const scannerOverlay = document.getElementById('scanner-overlay');
         const pageEditControls = document.getElementById('page-edit-controls');
+        const scalePanel = document.getElementById('scale-panel');
+        const scaleSlider = document.getElementById('scale-slider');
+        const scaleValue = document.getElementById('scale-value');
         const thumbnailsTray = document.getElementById('thumbnails-tray');
         const btnSave = document.getElementById('btn-save');
         const btnCapture = document.getElementById('btn-capture');
         const pageCountEl = document.getElementById('page-count');
         const docsListEl = document.getElementById('docs-list');
 
-        // --- NAVEGAÇÃO E INICIALIZAÇÃO ---
+        // --- NAVEGAÇÃO ---
         function openScanner(docToEdit = null) {
             views.home.classList.add('hide');
             views.scanner.classList.remove('hide');
             
             if (docToEdit) {
                 editingDocId = docToEdit.id;
-                currentPages = [...docToEdit.pages];
+                // Mapeia garantindo a integridade da propriedade de escala
+                currentPages = docToEdit.pages.map(p => typeof p === 'string' ? { dataUrl: p, scale: 100 } : { ...p });
                 updateThumbnails();
                 if (currentPages.length > 0) {
-                    viewPage(0); // Abre visualizando a primeira página
+                    viewPage(0);
                 } else {
                     startCamera();
                 }
             } else {
-                editingDocId = Date.now(); // Novo ID
+                editingDocId = Date.now();
                 currentPages = [];
                 updateThumbnails();
                 startCamera();
@@ -510,15 +576,17 @@
             renderHomeDocs();
         }
 
-        // --- CÂMERA ---
+        // --- GERENCIAMENTO DE CÂMERA ---
         async function startCamera() {
             activePageIndex = -1;
             previewImage.classList.add('hide');
             pageEditControls.classList.add('hide');
+            scalePanel.classList.add('hide');
             video.classList.remove('hide');
             scannerOverlay.classList.remove('hide');
-            btnCapture.style.opacity = '1';
-            btnCapture.style.pointerEvents = 'auto';
+            
+            // Reexibe o botão redondo de captura (Aprimoramento 1)
+            btnCapture.classList.remove('hide');
 
             updateThumbnailsUIActiveState();
 
@@ -529,7 +597,6 @@
                 video.srcObject = stream;
             } catch (err) {
                 console.error("Erro ao acessar a câmera: ", err);
-                alert("Não foi possível acessar a câmera. Verifique as permissões.");
             }
         }
 
@@ -546,43 +613,66 @@
 
         // --- CAPTURA ---
         function capturePage() {
-            if (activePageIndex !== -1) return; // Só captura se a câmera estiver ativa
+            if (activePageIndex !== -1) return;
 
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
             const ctx = canvas.getContext('2d');
             ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
             
-            const imgData = canvas.toDataURL('image/jpeg', 0.85); // Qualidade 85%
-            currentPages.push(imgData);
+            const imgData = canvas.toDataURL('image/jpeg', 0.85);
+            currentPages.push({ dataUrl: imgData, scale: 100 });
             
             updateThumbnails();
-            viewPage(currentPages.length - 1); // Mostra a página recém capturada
+            viewPage(currentPages.length - 1);
         }
 
-        // --- VISUALIZAÇÃO E EDIÇÃO DE PÁGINA ---
+        // --- EDIÇÃO & VISUALIZAÇÃO (Aprimoramento 1 & 4) ---
         function viewPage(index) {
-            stopCamera(); // Pausa a câmera enquanto visualiza
+            stopCamera();
             activePageIndex = index;
             
             video.classList.add('hide');
             scannerOverlay.classList.add('hide');
-            previewImage.src = currentPages[index];
+            
+            // Oculta o botão redondo de captura enquanto visualiza a miniatura (Aprimoramento 1)
+            btnCapture.classList.add('hide');
+
+            const page = currentPages[index];
+            previewImage.src = page.dataUrl;
+            previewImage.style.transform = `scale(${page.scale / 100})`;
             previewImage.classList.remove('hide');
+            
+            // Apresenta painéis de edição adicionais
             pageEditControls.classList.remove('hide');
             
-            // Desabilita botão de captura ao ver página
-            btnCapture.style.opacity = '0.3';
-            btnCapture.style.pointerEvents = 'none';
+            // Configura o controle de escala reativado (Aprimoramento 4)
+            scaleSlider.value = page.scale || 100;
+            scaleValue.innerText = (page.scale || 100) + '%';
+            scalePanel.classList.remove('hide');
 
             updateThumbnailsUIActiveState();
         }
 
-        // --- ROTAÇÃO ---
+        // Funcionalidade de Ajuste de Dimensionamento (Aprimoramento 4)
+        function adjustPageScale(value) {
+            if (activePageIndex === -1) return;
+            currentPages[activePageIndex].scale = parseInt(value);
+            scaleValue.innerText = value + '%';
+            
+            // Atualiza o preview visual em tempo real
+            previewImage.style.transform = `scale(${value / 100})`;
+            
+            // Sincroniza o texto interno da miniatura correspondente
+            const activeBadge = thumbnailsTray.querySelector('.active-thumb .thumb-scale-badge');
+            if (activeBadge) activeBadge.innerText = value + '%';
+        }
+
+        // Rotação 90°
         function rotateCurrentPage() {
             if (activePageIndex === -1) return;
             
-            const imgData = currentPages[activePageIndex];
+            const pageData = currentPages[activePageIndex].dataUrl;
             const img = new Image();
             img.onload = function() {
                 canvas.width = img.height;
@@ -590,34 +680,34 @@
                 const ctx = canvas.getContext('2d');
                 
                 ctx.translate(canvas.width / 2, canvas.height / 2);
-                ctx.rotate(Math.PI / 2); // 90 graus
+                ctx.rotate(Math.PI / 2);
                 ctx.drawImage(img, -img.width / 2, -img.height / 2);
                 
                 const newImgData = canvas.toDataURL('image/jpeg', 0.85);
-                currentPages[activePageIndex] = newImgData;
+                currentPages[activePageIndex].dataUrl = newImgData;
                 previewImage.src = newImgData;
                 updateThumbnails();
             };
-            img.src = imgData;
+            img.src = pageData;
         }
 
-        // --- EXCLUSÃO INDIVIDUAL ---
+        // Remoção Individual
         function deleteCurrentPage() {
             if (activePageIndex === -1) return;
             
-            if(confirm("Tem certeza que deseja excluir esta página?")) {
+            if(confirm("Deseja remover esta página permanentemente?")) {
                 currentPages.splice(activePageIndex, 1);
                 updateThumbnails();
                 
                 if (currentPages.length > 0) {
-                    viewPage(currentPages.length - 1);
+                    viewPage(Math.max(0, activePageIndex - 1));
                 } else {
                     startCamera();
                 }
             }
         }
 
-        // --- MINIATURAS ---
+        // --- SISTEMA DE THUMBNAILS ---
         function updateThumbnails() {
             thumbnailsTray.innerHTML = '';
             pageCountEl.innerText = currentPages.length;
@@ -629,26 +719,22 @@
                 wrapper.onclick = () => viewPage(index);
                 
                 const img = document.createElement('img');
-                img.src = page;
+                img.src = page.dataUrl;
                 
                 const badge = document.createElement('div');
                 badge.className = 'thumb-scale-badge';
-                badge.innerText = index + 1;
+                badge.innerText = page.scale + '%';
 
                 wrapper.appendChild(img);
                 wrapper.appendChild(badge);
                 thumbnailsTray.appendChild(wrapper);
             });
 
-            // Botão para adicionar mais páginas (voltar à câmera)
             const addBtn = document.createElement('div');
             addBtn.className = 'add-more-card';
             addBtn.innerHTML = '<i class="fa-solid fa-plus"></i>';
             addBtn.onclick = () => startCamera();
             thumbnailsTray.appendChild(addBtn);
-
-            // Rola para o final
-            thumbnailsTray.scrollLeft = thumbnailsTray.scrollWidth;
         }
 
         function updateThumbnailsUIActiveState() {
@@ -659,20 +745,21 @@
             });
         }
 
-        // --- SALVAR E GERAR PDF ---
+        // --- DOCUMENTOS E PERSISTÊNCIA ---
         function saveDocument() {
             if (currentPages.length === 0) return;
 
-            // Atualiza ou adiciona no array de documentos
             const existingIndex = savedDocuments.findIndex(d => d.id === editingDocId);
+            const isEditing = existingIndex > -1;
+            
             const docObj = {
                 id: editingDocId,
-                title: `Documento ${new Date().toLocaleDateString()}`,
-                date: new Date().toLocaleString(),
-                pages: [...currentPages]
+                title: isEditing ? savedDocuments[existingIndex].title : `Doc #${savedDocuments.length + 1}`,
+                date: isEditing ? savedDocuments[existingIndex].date : new Date().toLocaleString('pt-BR'),
+                pages: JSON.parse(JSON.stringify(currentPages))
             };
 
-            if (existingIndex > -1) {
+            if (isEditing) {
                 savedDocuments[existingIndex] = docObj;
             } else {
                 savedDocuments.push(docObj);
@@ -681,48 +768,25 @@
             closeScanner();
         }
 
-        async function downloadPDF(docId) {
-            const doc = savedDocuments.find(d => d.id === docId);
-            if (!doc || doc.pages.length === 0) return;
-
-            const { jsPDF } = window.jspdf;
-            const pdf = new jsPDF('p', 'mm', 'a4'); // Retrato, milímetros, formato A4
-            const pdfWidth = pdf.internal.pageSize.getWidth();
-            const pdfHeight = pdf.internal.pageSize.getHeight();
-
-            for (let i = 0; i < doc.pages.length; i++) {
-                if (i > 0) pdf.addPage();
-                
-                const imgData = doc.pages[i];
-                
-                // Precisamos saber as dimensões da imagem para ajustá-la no PDF sem distorcer
-                await new Promise((resolve) => {
-                    const img = new Image();
-                    img.onload = () => {
-                        const ratio = Math.min(pdfWidth / img.width, pdfHeight / img.height);
-                        const finalWidth = img.width * ratio;
-                        const finalHeight = img.height * ratio;
-                        
-                        // Centralizar na página A4
-                        const x = (pdfWidth - finalWidth) / 2;
-                        const y = (pdfHeight - finalHeight) / 2;
-                        
-                        pdf.addImage(imgData, 'JPEG', x, y, finalWidth, finalHeight);
-                        resolve();
-                    };
-                    img.src = imgData;
-                });
+        // Modificação de Título Individual na Galeria (Aprimoramento 3)
+        function renameDocument(id, event) {
+            event.stopPropagation(); // Evita interrupção no fluxo dos cards
+            const doc = savedDocuments.find(d => d.id === id);
+            if (!doc) return;
+            
+            const newName = prompt("Insira um novo nome para o documento:", doc.title);
+            if (newName && newName.trim() !== "") {
+                doc.title = newName.trim();
+                renderHomeDocs();
             }
-
-            pdf.save(`${doc.title}.pdf`);
         }
 
-        // --- RENDERIZAR TELA INICIAL ---
+        // Renderização Dinâmica respeitando a trava de scroll externo (Aprimoramento 2)
         function renderHomeDocs() {
             docsListEl.innerHTML = '';
             
             if (savedDocuments.length === 0) {
-                docsListEl.innerHTML = '<p style="color:var(--text-secondary); grid-column:1/-1; text-align:center; padding: 20px;">Nenhum documento digitalizado ainda.</p>';
+                docsListEl.innerHTML = '<p style="color:var(--text-secondary); grid-column:1/-1; text-align:center; padding: 20px;">Nenhum documento armazenado.</p>';
                 return;
             }
 
@@ -731,9 +795,14 @@
                 card.className = 'doc-card';
                 
                 card.innerHTML = `
-                    <img src="${doc.pages[0]}" class="doc-preview" />
-                    <div class="doc-title">${doc.title}</div>
-                    <div class="doc-date">${doc.pages.length} página(s) • ${doc.date}</div>
+                    <img src="${doc.pages[0].dataUrl}" class="doc-preview" />
+                    <div class="doc-title-container">
+                        <div class="doc-title" title="${doc.title}">${doc.title}</div>
+                        <button class="btn-rename" onclick="renameDocument(${doc.id}, event)" title="Editar nome">
+                            <i class="fa-solid fa-pen-to-square"></i>
+                        </button>
+                    </div>
+                    <div class="doc-date">${doc.pages.length} pág(s) • ${doc.date}</div>
                     <div class="doc-actions">
                         <button class="btn-doc-action btn-edit" onclick="editDocument(${doc.id})"><i class="fa-solid fa-pen"></i> Editar</button>
                         <button class="btn-doc-action btn-download" onclick="downloadPDF(${doc.id})"><i class="fa-solid fa-download"></i> Baixar</button>
@@ -748,7 +817,46 @@
             if (doc) openScanner(doc);
         }
 
-        // Inicializa a tela (vazia por padrão)
+        // Download com Ajuste Proporcional de Dimensão (Aprimoramento 4)
+        async function downloadPDF(docId) {
+            const doc = savedDocuments.find(d => d.id === id => id === docId);
+            const targetDoc = savedDocuments.find(d => d.id === docId);
+            if (!targetDoc || targetDoc.pages.length === 0) return;
+
+            const { jsPDF } = window.jspdf;
+            const pdf = new jsPDF('p', 'mm', 'a4');
+            const pdfWidth = pdf.internal.pageSize.getWidth();
+            const pdfHeight = pdf.internal.pageSize.getHeight();
+
+            for (let i = 0; i < targetDoc.pages.length; i++) {
+                if (i > 0) pdf.addPage();
+                
+                const page = targetDoc.pages[i];
+                
+                await new Promise((resolve) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        const ratio = Math.min(pdfWidth / img.width, pdfHeight / img.height);
+                        
+                        // Fator baseado na escala individual definida pelo usuário (Aprimoramento 4)
+                        const scaleMultiplier = (page.scale || 100) / 100;
+                        const finalWidth = img.width * ratio * scaleMultiplier;
+                        const finalHeight = img.height * ratio * scaleMultiplier;
+                        
+                        const x = (pdfWidth - finalWidth) / 2;
+                        const y = (pdfHeight - finalHeight) / 2;
+                        
+                        pdf.addImage(page.dataUrl, 'JPEG', x, y, finalWidth, finalHeight);
+                        resolve();
+                    };
+                    img.src = page.dataUrl;
+                });
+            }
+
+            pdf.save(`${targetDoc.title}.pdf`);
+        }
+
+        // Execução inicializada
         renderHomeDocs();
     </script>
 </body>
